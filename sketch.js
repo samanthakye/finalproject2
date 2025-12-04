@@ -77,7 +77,36 @@ function draw() {
     // Reset blend mode 
     blendMode(BLEND); 
 
-    // Optional: Visualization of Intensity
+    // --- AI/Code "Thought Process" Visualization ---
+    // This section shows the data driving the visual effects.
+
+    // 1. Visualize the full audio spectrum
+    // The 'spectrum' variable was already calculated at the start of draw()
+    noStroke();
+    fill(0, 255, 0, 100); // Green for the spectrum
+    for (let i = 0; i < spectrum.length; i++) {
+        // Use a logarithmic scale for the x-axis for a more conventional frequency representation
+        let x = map(log(i), 0, log(spectrum.length), 0, width);
+        // Map the spectrum value to a height
+        let h = map(spectrum[i], 0, 255, 0, height * 0.5);
+        rect(x, height, 1, -h); // Draw from the bottom up
+    }
+
+    // 2. Display raw data as text
+    noStroke();
+    fill(255);
+    textSize(16);
+    textFont('monospace');
+
+    // Display the values calculated at the beginning of draw()
+    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 60);
+    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 40);
+    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 20);
+
+    // 3. Visual indicator for Intensity (the red bar)
     fill(255, 0, 0, 150);
     rect(10, 10, intensity * 5, 20);
+    fill(255);
+    noStroke();
+    text('Intensity', (intensity * 5) + 15, 25);
 }
