@@ -4,8 +4,8 @@ let fft;   // Used for frequency analysis
 let audioStarted = false; // To track if audio has been started by user
 
 // --- NEW CONSTANTS FOR SCREEN CROWDING ---
-const NUM_BUBBLES_X = 15; // Number of bubbles horizontally
-const NUM_BUBBLES_Y = 10; // Number of bubbles vertically
+const NUM_BUBBLES_X = 30; // Number of bubbles horizontally
+const NUM_BUBBLES_Y = 20; // Number of bubbles vertically
 const TOTAL_BUBBLES = NUM_BUBBLES_X * NUM_BUBBLES_Y;
 
 function setup() {
