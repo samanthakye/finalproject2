@@ -31,7 +31,11 @@ function draw() {
     let intensity = map(bassEnergy, 0, 255, 0, 40); // Increased max distortion for impact
 
     // 2. Draw the Video Background
-    image(video, 0, 0, width, height); 
+    push();
+    translate(width, 0);
+    scale(-1, 1);
+    image(video, 0, 0, width, height);
+    pop(); 
 
     // 3. Apply the 'Hole Punch' Masking Effect
     
