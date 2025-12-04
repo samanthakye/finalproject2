@@ -1,6 +1,7 @@
 let video; // Stores the camera feed
 let mic;   // Stores the microphone input
 let fft;   // Used for frequency analysis
+let audioStarted = false; // To track if audio has been started by user
 
 // --- NEW CONSTANTS FOR SCREEN CROWDING ---
 const NUM_BUBBLES_X = 15; // Number of bubbles horizontally
@@ -15,13 +16,26 @@ function setup() {
     video.hide(); 
 
     mic = new p5.AudioIn();
-    mic.start();
+    // Note: mic.start() is now called in mousePressed()
 
     fft = new p5.FFT();
     fft.setInput(mic);
+    
+    // Set up text for the initial message
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    textFont('monospace');
 }
 
 function draw() {
+    // If audio hasn't started, show a message and wait.
+    if (!audioStarted) {
+        background(0);
+        fill(255);
+        text("Click to start audio", width / 2, height / 2);
+        return; // Stop the rest of the draw loop
+    }
+
     // 1. Analyze Sound Data
     let volume = mic.getLevel(); 
     let spectrum = fft.analyze(); 
@@ -109,4 +123,14 @@ function draw() {
     fill(255);
     noStroke();
     text('Intensity', (intensity * 5) + 15, 25);
+}
+
+function mousePressed() {
+  if (!audioStarted) {
+    // Start audio on user gesture
+    userStartAudio().then(() => {
+        mic.start();
+        audioStarted = true;
+    });
+  }
 }
