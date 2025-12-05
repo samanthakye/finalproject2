@@ -122,7 +122,7 @@ function draw() {
     rect(10, 10, intensity * 5, 20);
     fill(255);
     noStroke();
-    text('Intensity', (intensity * 5) + 15, 25);
+    
 }
 
 function mousePressed() {
