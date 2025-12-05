@@ -70,6 +70,21 @@ function draw() {
     
     blendMode(BLEND); 
 
+    // --- AI/Code "Thought Process" Visualization ---
+    // This section shows the data driving the visual effects.
+
+    // 1. Visualize the full audio spectrum
+    // The 'spectrum' variable was already calculated at the start of draw()
+    noStroke();
+    fill(0, 255, 0, 100); // Green for the spectrum
+    for (let i = 0; i < spectrum.length; i++) {
+        // Use a logarithmic scale for the x-axis for a more conventional frequency representation
+        let x = map(log(i), 0, log(spectrum.length), 0, width);
+        // Map the spectrum value to a height
+        let h = map(spectrum[i], 0, 255, 0, height * 0.5);
+        rect(x, height, 1, -h); // Draw from the bottom up
+    }
+
     // --- Data Display ---
     noStroke();
     fill(255);
