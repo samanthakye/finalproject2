@@ -27,6 +27,40 @@ const SHOCKWAVE_DURATION = 30; // Shockwave lasts for 30 frames
 let shockwaveRadius = 0;
 let shockwaveColor;
 
+// Grid of dots
+let dots = [];
+
+// Dot class
+class Dot {
+    constructor(x, y, baseSize) {
+        this.x = x;
+        this.y = y;
+        this.baseSize = baseSize;
+        this.currentSize = baseSize;
+        this.energy = 0;
+    }
+
+    update(volume) {
+        // Add energy based on volume
+        this.energy += volume * 2;
+
+        // Update size based on energy
+        this.currentSize = this.baseSize + this.energy * 5;
+
+        // Decay energy
+        this.energy *= 0.9;
+    }
+
+    display(intensity) {
+        noStroke();
+        
+        let xNoise = map(noise(frameCount * 0.01 + this.x * 10), 0, 1, -intensity, intensity);
+        let yNoise = map(noise(frameCount * 0.02 + this.y * 5), 0, 1, -intensity, intensity);
+        
+        circle(this.x + xNoise, this.y + yNoise, this.currentSize);
+    }
+}
+
 function setup() {
     createCanvas(windowWidth, windowHeight); 
 
@@ -42,6 +76,19 @@ function setup() {
     bassDominantColor = color(255, 100, 0); // Orange/Red
     trebleDominantColor = color(0, 100, 255); // Blue/Purple
     shockwaveColor = color(255, 255, 0, 150); // Yellow, semi-transparent
+
+    // Initialize dots
+    let xSpacing = width / NUM_BUBBLES_X;
+    let ySpacing = height / NUM_BUBBLES_Y;
+    for (let i = 0; i < NUM_BUBBLES_X; i++) {
+        dots[i] = [];
+        for (let j = 0; j < NUM_BUBBLES_Y; j++) {
+            let x = (i * xSpacing) + (xSpacing / 2);
+            let y = (j * ySpacing) + (ySpacing / 2);
+            let baseSize = (xSpacing + ySpacing) / 2 * 0.8;
+            dots[i][j] = new Dot(x, y, baseSize);
+        }
+    }
 }
         
         function draw() {
@@ -94,6 +141,19 @@ function setup() {
                 background(255); // Normal white background
             }
         
+            // Generative background layer
+            let noiseAlpha = map(bassEnergy, 0, 255, 0, 50);
+            let bgTileSize = 40;
+            for (let x = 0; x < width; x += bgTileSize) {
+                for (let y = 0; y < height; y += bgTileSize) {
+                    let noiseVal = noise(x * 0.01, y * 0.01, frameCount * 0.01);
+                    let bgColor = map(noiseVal, 0, 1, 0, 255);
+                    fill(bgColor, noiseAlpha);
+                    noStroke();
+                    rect(x, y, bgTileSize, bgTileSize);
+                }
+            }
+
             blendMode(BLEND);
         
             // Calculate color based on energy balance
@@ -109,26 +169,33 @@ function setup() {
             }
             noStroke();
         
-            let xSpacing = width / NUM_BUBBLES_X;
-            let ySpacing = height / NUM_BUBBLES_Y;
-        
+            // Update and display all dots
             for (let i = 0; i < NUM_BUBBLES_X; i++) {
                 for (let j = 0; j < NUM_BUBBLES_Y; j++) {
-                    let baseSize = (xSpacing + ySpacing) / 2 * 1.2; 
-                    let amplifiedVolume = min(volume * 3, 1.0);
-                    let circleSize = map(amplifiedVolume, 0, 1, baseSize * 0.5, baseSize * 2.5);
-                    
-                    let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
-                    let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
-        
-                    let x = (i * xSpacing) + (xSpacing / 2) + xNoise;
-                    let y = (j * ySpacing) + (ySpacing / 2) + yNoise; 
-                    
-                    circle(x, y, circleSize);
+                    dots[i][j].update(volume);
+                    dots[i][j].display(intensity);
                 }
             }
             
             blendMode(BLEND); 
+
+            // Generative foreground layer
+            if (trebleEnergy > 100) {
+                let numLines = map(trebleEnergy, 100, 255, 1, 10);
+                push();
+                stroke(255, 255, 255, 150); // White, semi-transparent lines
+                strokeWeight(map(trebleEnergy, 100, 255, 0.5, 2));
+                for (let i = 0; i < numLines; i++) {
+                    let x1 = random(width);
+                    let y1 = random(height);
+                    let angle = random(TWO_PI);
+                    let len = random(20, 100);
+                    let x2 = x1 + cos(angle) * len;
+                    let y2 = y1 + sin(angle) * len;
+                    line(x1, y1, x2, y2);
+                }
+                pop();
+            }
 
             // Draw shockwave if active
             if (shockwaveActive) {
