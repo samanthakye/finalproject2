@@ -110,27 +110,23 @@ function draw() {
             
             let currentPos = bubblePositions[i][j];
 
-            // --- AI Clustering Logic ---
+            // --- AI Loose Grid Logic ---
             let homeX = (i * xSpacing) + (xSpacing / 2);
             let homeY = (j * ySpacing) + (ySpacing / 2);
-            let targetX = homeX;
-            let targetY = homeY;
+            
+            let maxDrift = xSpacing * 2;
 
-            if (dominantEnergy === 'bass') {
-                targetX = map(noise(i * 0.2, j * 0.2), 0, 1, 0, width / 3);
-                targetY = map(noise(i * 0.2 + 1000, j * 0.2 + 1000), 0, 1, 0, height);
-            } else if (dominantEnergy === 'mid') {
-                targetX = map(noise(i * 0.2, j * 0.2), 0, 1, width / 3, 2 * width / 3);
-                targetY = map(noise(i * 0.2 + 1000, j * 0.2 + 1000), 0, 1, 0, height);
-            } else if (dominantEnergy === 'treble') {
-                targetX = map(noise(i * 0.2, j * 0.2), 0, 1, 2 * width / 3, width);
-                targetY = map(noise(i * 0.2 + 1000, j * 0.2 + 1000), 0, 1, 0, height);
-            }
+            // A large-scale, slow noise to make the whole grid wave and distort organically
+            let gridWaveX = map(noise(frameCount * 0.0005 + 2000), 0, 1, -maxDrift, maxDrift);
+            let gridWaveY = map(noise(frameCount * 0.0005 + 3000), 0, 1, -maxDrift, maxDrift);
+
+            let targetX = homeX + gridWaveX;
+            let targetY = homeY + gridWaveY;
 
             let lerpFactor = 0.05;
             currentPos.x = lerp(currentPos.x, targetX, lerpFactor);
             currentPos.y = lerp(currentPos.y, targetY, lerpFactor);
-            // --- End AI Clustering Logic ---
+            // --- End AI Logic ---
 
             let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
             let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
