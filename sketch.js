@@ -154,6 +154,19 @@ function draw() {
         }
     }
 
+    // Display AI "thought process"
+    push(); // Save current drawing style
+    fill(150, 200, 255); // Light Cyan/Blue for text, matching treble color
+    textAlign(LEFT, TOP);
+    textSize(16); // Smaller text
+
+    text("Input (smooth): " + nf(smoothedVolume, 0, 2), 20, 20);
+    text("Dominant Freq: " + dominantEnergy, 20, 40);
+    text("Bass Energy: " + nf(bassEnergy, 0, 0), 20, 60);
+    text("Mid Energy: " + nf(midEnergy, 0, 0), 20, 80);
+    text("Treble Energy: " + nf(trebleEnergy, 0, 0), 20, 100);
+    pop(); // Restore previous drawing style
+
     drawWaveform(waveform);
 }
 
