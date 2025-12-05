@@ -16,14 +16,15 @@ let smoothingFactor = 0.1; // Adjust this value to change the smoothness (0.0 to
 let bubblePositions;
 
 function initializePositions() {
-    bubblePositions = Array(NUM_BUBBLES_X).fill(0).map(() => Array(NUM_BUBBLES_Y).fill(0).map(() => ({x: 0, y: 0})));
+    bubblePositions = Array(NUM_BUBBLES_X).fill(0).map(() => Array(NUM_BUBBLES_Y).fill(0).map(() => ({x: 0, y: 0, dataCollected: 0})));
     let xSpacing = width / NUM_BUBBLES_X;
     let ySpacing = height / NUM_BUBBLES_Y;
     for (let i = 0; i < NUM_BUBBLES_X; i++) {
         for (let j = 0; j < NUM_BUBBLES_Y; j++) {
             bubblePositions[i][j] = {
                 x: (i * xSpacing) + (xSpacing / 2),
-                y: (j * ySpacing) + (ySpacing / 2)
+                y: (j * ySpacing) + (ySpacing / 2),
+                dataCollected: 0
             };
         }
     }
@@ -94,7 +95,6 @@ function draw() {
     let color1 = lerpColor(bassColorMain, midColorMain, normMid);
     let finalColor = lerpColor(color1, trebleColorMain, normTreble);
     
-    fill(finalColor);
     noStroke();
 
     let xSpacing = width / NUM_BUBBLES_X;
@@ -108,11 +108,11 @@ function draw() {
             let amplifiedVolume = min(smoothedVolume * 5, 1.0); 
             let circleSize = map(amplifiedVolume, 0, 1, baseSize * 0.1, baseSize * 2.0);
             
+            let currentPos = bubblePositions[i][j];
+
             // --- AI Clustering Logic ---
-            // 2. Define home and target positions
             let homeX = (i * xSpacing) + (xSpacing / 2);
             let homeY = (j * ySpacing) + (ySpacing / 2);
-            
             let targetX = homeX;
             let targetY = homeY;
 
@@ -127,21 +127,32 @@ function draw() {
                 targetY = map(noise(i * 0.2 + 1000, j * 0.2 + 1000), 0, 1, 0, height);
             }
 
-            // 3. Animate movement towards target
-            let currentPos = bubblePositions[i][j];
             let lerpFactor = 0.05;
             currentPos.x = lerp(currentPos.x, targetX, lerpFactor);
             currentPos.y = lerp(currentPos.y, targetY, lerpFactor);
-            // --- End AI Logic ---
+            // --- End AI Clustering Logic ---
 
-            // The local movement of the circle is based on Perlin noise, influenced by 'intensity'
             let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
             let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
 
-            // The final position is the interpolated cluster position plus the local noise
             let x = currentPos.x + xNoise;
             let y = currentPos.y + yNoise; 
             
+            // --- Aura Logic ---
+            currentPos.dataCollected += smoothedVolume;
+            currentPos.dataCollected *= 0.995; // Slow decay
+
+            let maxAuraSize = baseSize * 4;
+            let auraSize = map(currentPos.dataCollected, 0, 2, circleSize, maxAuraSize);
+            auraSize = max(auraSize, circleSize);
+
+            let auraColor = color(red(finalColor), green(finalColor), blue(finalColor), 30);
+            fill(auraColor);
+            circle(x, y, auraSize);
+            // --- End Aura Logic ---
+
+            // Draw the main circle
+            fill(finalColor);
             circle(x, y, circleSize);
         }
     }
