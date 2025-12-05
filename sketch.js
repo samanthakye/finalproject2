@@ -1,46 +1,47 @@
 let video; // Stores the camera feed
-
-// --- DATA FROM SERVER ---
-// These variables will be updated by the data coming from the broadcaster phone
-let volume = 0;
-let bassEnergy = 0;
-let intensity = 0;
-let transcribedText = 'Waiting for transcription...';
+let mic;   // Stores the microphone input
+let fft;   // Used for frequency analysis
+let audioStarted = false; // To track if audio has been started by user
 
 // --- VISUALS CONSTANTS ---
 const NUM_BUBBLES_X = 30;
 const NUM_BUBBLES_Y = 20;
 
-// --- WEBSOCKET CLIENT SETUP ---
-const socket = new WebSocket('ws://localhost:8080');
+// --- SPEECH RECOGNITION SETUP ---
+window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+if (window.SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
 
-socket.onopen = () => {
-    console.log('Connected to relay server.');
-};
+  recognition.onresult = (event) => {
+    let finalTranscript = '';
+    const transcriptionDiv = document.getElementById('transcription');
 
-socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('Received data:', data);
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript.trim() + '. ';
+      }
+    }
+    
+    // Update the transcription display
+    transcriptionDiv.textContent = finalTranscript;
+  };
 
-    // Update global variables with data from the server
-    volume = data.volume || 0;
-    bassEnergy = data.bassEnergy || 0;
-    transcribedText = data.text || '';
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+    const transcriptionDiv = document.getElementById('transcription');
+    transcriptionDiv.textContent = `Speech Error: ${event.error}`;
+  };
+  
+  recognition.onend = () => {
+    if (audioStarted) {
+      recognition.start(); // Keep it running
+    }
+  };
 
-    // The 'intensity' is now derived from the server's bassEnergy data
-    intensity = map(bassEnergy, 0, 255, 0, 40);
-};
-
-socket.onerror = (error) => {
-    console.error('WebSocket Error:', error);
-    transcribedText = 'Connection error. Is the server running?';
-};
-
-socket.onclose = () => {
-    console.log('Disconnected from relay server.');
-    transcribedText = 'Disconnected from server.';
-};
-
+}
 
 function setup() {
     createCanvas(windowWidth, windowHeight); 
@@ -49,27 +50,42 @@ function setup() {
     video.size(width, height);
     video.hide(); 
 
-    // No local mic or FFT needed anymore!
+    // Initialize local mic and FFT
+    mic = new p5.AudioIn();
+    fft = new p5.FFT();
+    fft.setInput(mic);
     
     textAlign(CENTER, CENTER);
     textSize(24);
     textFont('monospace');
+
+    if (!window.SpeechRecognition) {
+      const transcriptionDiv = document.getElementById('transcription');
+      transcriptionDiv.innerHTML = "Speech recognition is not supported in this browser.";
+    }
 }
 
 function draw() {
-    // No more "Click to start" message, it runs automatically
-    
-    // The draw loop now continuously uses the 'volume' and 'intensity'
-    // variables that are being updated by the WebSocket connection.
+    if (!audioStarted) {
+        background(0);
+        fill(255);
+        text("Click to start audio", width / 2, height / 2);
+        return;
+    }
 
-    // 1. Draw the Video Background
+    // 1. Analyze Local Sound Data
+    let volume = mic.getLevel(); 
+    let bassEnergy = fft.getEnergy('bass');
+    let intensity = map(bassEnergy, 0, 255, 0, 40);
+
+    // 2. Draw the Video Background
     push();
     translate(width, 0);
     scale(-1, 1);
     image(video, 0, 0, width, height);
     pop(); 
 
-    // 2. Apply the 'Hole Punch' Masking Effect
+    // 3. Apply the 'Hole Punch' Masking Effect
     blendMode(DIFFERENCE);
     noStroke();
     fill(255);
@@ -93,34 +109,30 @@ function draw() {
     }
     
     blendMode(BLEND); 
-
-    // --- VISUALIZATION & DATA DISPLAY ---
-
-    // 1. Display raw data from the server
+    
+    // --- Data Display ---
+    noStroke();
     fill(255);
     textSize(16);
-    textFont('monospace');
-    textAlign(LEFT); // Align text to the left
-    text(`Live Volume:      ${volume.toFixed(4)}`, 10, height - 60);
-    text(`Live Bass Energy: ${bassEnergy.toFixed(2)}`, 10, height - 40);
-    text(`Live Intensity:   ${intensity.toFixed(2)}`, 10, height - 20);
+    textAlign(LEFT);
+    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 60);
+    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 40);
+    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 20);
 
-    // 2. Visual indicator for Intensity
+    // Visual indicator for Intensity
     fill(255, 0, 0, 150);
     rect(10, 10, intensity * 5, 20);
-
-    // 3. Display the live transcription text
-    // The 'transcription' div is still in index.html and styled by style.css
-    const transcriptionDiv = document.getElementById('transcription');
-    transcriptionDiv.textContent = transcribedText;
 }
 
-// mousePressed is no longer needed to start audio, but you could use it
-// for other interactions, like this:
 function mousePressed() {
-    console.log("Mouse pressed. Current intensity:", intensity);
-    // Example of reacting to a click: trigger a visual burst
-    // This is just an example of how you can still have interactions
-    fill(255, 255, 0, 100);
-    rect(0, 0, width, height);
+  if (!audioStarted) {
+    userStartAudio().then(() => {
+        mic.start();
+        if (recognition) {
+          recognition.start();
+          console.log('Speech recognition started.');
+        }
+        audioStarted = true;
+    });
+  }
 }
