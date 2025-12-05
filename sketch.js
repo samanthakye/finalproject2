@@ -43,10 +43,10 @@ function setup() {
     textSize(24);
     textFont('monospace');
 
-    // Initialize base colors
-    bassColorMain = color(255, 60, 0);   // Deep Orange/Red
-    midColorMain = color(0, 200, 100);   // Vibrant Green
-    trebleColorMain = color(50, 100, 255); // Bright Blue
+    // Initialize base colors with cool tones
+    bassColorMain = color(20, 20, 100);   // Deep Blue
+    midColorMain = color(80, 80, 180);   // Medium Blue/Violet
+    trebleColorMain = color(150, 200, 255); // Light Cyan/Blue
 }
         
 function draw() {
