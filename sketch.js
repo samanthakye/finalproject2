@@ -4,44 +4,8 @@ let fft;   // Used for frequency analysis
 let audioStarted = false; // To track if audio has been started by user
 
 // --- VISUALS CONSTANTS ---
-const NUM_BUBBLES_X = 30;
-const NUM_BUBBLES_Y = 20;
-
-// --- SPEECH RECOGNITION SETUP ---
-window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition;
-if (window.SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-
-  recognition.onresult = (event) => {
-    let finalTranscript = '';
-    const transcriptionDiv = document.getElementById('transcription');
-
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript.trim() + '. ';
-      }
-    }
-    
-    // Update the transcription display
-    transcriptionDiv.textContent = finalTranscript;
-  };
-
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    const transcriptionDiv = document.getElementById('transcription');
-    transcriptionDiv.textContent = `Speech Error: ${event.error}`;
-  };
-  
-  recognition.onend = () => {
-    if (audioStarted) {
-      recognition.start(); // Keep it running
-    }
-  };
-
-}
+const NUM_BUBBLES_X = 30; // Number of bubbles horizontally
+const NUM_BUBBLES_Y = 20; // Number of bubbles vertically
 
 function setup() {
     createCanvas(windowWidth, windowHeight); 
@@ -50,7 +14,6 @@ function setup() {
     video.size(width, height);
     video.hide(); 
 
-    // Initialize local mic and FFT
     mic = new p5.AudioIn();
     fft = new p5.FFT();
     fft.setInput(mic);
@@ -58,11 +21,6 @@ function setup() {
     textAlign(CENTER, CENTER);
     textSize(24);
     textFont('monospace');
-
-    if (!window.SpeechRecognition) {
-      const transcriptionDiv = document.getElementById('transcription');
-      transcriptionDiv.innerHTML = "Speech recognition is not supported in this browser.";
-    }
 }
 
 function draw() {
@@ -70,11 +28,13 @@ function draw() {
         background(0);
         fill(255);
         text("Click to start audio", width / 2, height / 2);
-        return;
+        return; // Stop the rest of the draw loop
     }
 
-    // 1. Analyze Local Sound Data
+    // 1. Analyze Sound Data
     let volume = mic.getLevel(); 
+    let spectrum = fft.analyze(); 
+    
     let bassEnergy = fft.getEnergy('bass');
     let intensity = map(bassEnergy, 0, 255, 0, 40);
 
@@ -109,7 +69,7 @@ function draw() {
     }
     
     blendMode(BLEND); 
-    
+
     // --- Data Display ---
     noStroke();
     fill(255);
@@ -128,10 +88,6 @@ function mousePressed() {
   if (!audioStarted) {
     userStartAudio().then(() => {
         mic.start();
-        if (recognition) {
-          recognition.start();
-          console.log('Speech recognition started.');
-        }
         audioStarted = true;
     });
   }
