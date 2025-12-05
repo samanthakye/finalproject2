@@ -63,10 +63,25 @@ function draw() {
     // Smooth the volume
     smoothedVolume += (volume - smoothedVolume) * smoothingFactor;
     fft.analyze(); // Analyze the frequency spectrum
+    let waveform = fft.waveform(); // Get waveform data
     
     let bassEnergy = fft.getEnergy('bass');
     let midEnergy = fft.getEnergy('mid');
     let trebleEnergy = fft.getEnergy('treble');
+
+    // --- AI Clustering Logic ---
+    // 1. Determine dominant frequency
+    let dominantEnergy = 'none';
+    const energyThreshold = 100; // Only react if energy is significant
+    if (bassEnergy > energyThreshold && bassEnergy > midEnergy && bassEnergy > trebleEnergy) {
+        dominantEnergy = 'bass';
+    } else if (midEnergy > energyThreshold && midEnergy > bassEnergy && midEnergy > trebleEnergy) {
+        dominantEnergy = 'mid';
+    } else if (trebleEnergy > energyThreshold && trebleEnergy > bassEnergy && trebleEnergy > midEnergy) {
+        dominantEnergy = 'treble';
+    }
+    // --- End AI Logic ---
+    
     
     // Intensity of movement is driven by a combination of bass and overall volume
     let intensity = constrain(map(bassEnergy + volume * 100, 0, 255, 0, 80), 0, 80);
@@ -120,6 +135,21 @@ function draw() {
             circle(x, y, circleSize);
         }
     }
+
+    // Display AI "thought process"
+    push(); // Save current drawing style
+    fill(150, 200, 255); // Light Cyan/Blue for text, matching treble color
+    textAlign(LEFT, TOP);
+    textSize(16); // Smaller text
+
+    text("Input (smooth): " + nf(smoothedVolume, 0, 2), 20, 20);
+    text("Dominant Freq: " + dominantEnergy, 20, 40);
+    text("Bass Energy: " + nf(bassEnergy, 0, 0), 20, 60);
+    text("Mid Energy: " + nf(midEnergy, 0, 0), 20, 80);
+    text("Treble Energy: " + nf(trebleEnergy, 0, 0), 20, 100);
+    pop(); // Restore previous drawing style
+
+    drawWaveform(waveform);
 }
 
 function mousePressed() {
@@ -139,4 +169,22 @@ function userStartAudio() {
     if (getAudioContext().state !== 'running') {
         getAudioContext().resume();
     }
+}
+
+function drawWaveform(waveform) {
+    let waveY = height;
+    let waveHeight = 150;
+
+    noFill();
+    stroke(0, 150, 255, 150);
+    strokeWeight(2);
+    beginShape();
+
+    for (let i = 0; i < waveform.length; i++) {
+        let x = map(i, 0, waveform.length, 0, width);
+        let y = map(waveform[i], -1, 1, waveY, waveY - waveHeight);
+        vertex(x, y);
+    }
+
+    endShape();
 }
