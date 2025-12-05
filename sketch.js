@@ -10,6 +10,9 @@ let bassColorMain;
 let midColorMain;
 let trebleColorMain;
 
+let smoothedVolume = 0;
+let smoothingFactor = 0.1; // Adjust this value to change the smoothness (0.0 to 1.0)
+
 function setup() {
     createCanvas(windowWidth, windowHeight); 
 
@@ -38,6 +41,10 @@ function draw() {
     background(255); // White background
 
     let volume = mic.getLevel(); 
+    
+    // Smooth the volume
+    smoothedVolume += (volume - smoothedVolume) * smoothingFactor;
+
     fft.analyze(); // Analyze the frequency spectrum
     
     let bassEnergy = fft.getEnergy('bass');
@@ -67,7 +74,7 @@ function draw() {
             let baseSize = (xSpacing + ySpacing) / 2 * 1.2; 
             
             // The size of the circle is reactive to the overall volume
-            let amplifiedVolume = min(volume * 5, 1.0); 
+            let amplifiedVolume = min(smoothedVolume * 5, 1.0); 
             let circleSize = map(amplifiedVolume, 0, 1, baseSize * 0.1, baseSize * 2.0);
             
             // The movement of the circle is based on Perlin noise, influenced by 'intensity'
