@@ -97,7 +97,7 @@ function draw() {
     }
 
     // 2. Draw the Solid Background
-    background(50); 
+    background(255); 
 
     // 3. Apply the 'Hole Punch' Masking Effect
     blendMode(DIFFERENCE);
