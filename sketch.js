@@ -6,6 +6,9 @@ let audioStarted = false; // To track if audio has been started by user
 // --- VISUALS CONSTANTS ---
 const NUM_BUBBLES_X = 30; // Number of bubbles horizontally
 const NUM_BUBBLES_Y = 20; // Number of bubbles vertically
+const MAX_LOG_MESSAGES = 10; // Max number of log messages on screen
+
+let logMessages = []; // Array to store log messages
 
 function setup() {
     createCanvas(windowWidth, windowHeight); 
@@ -37,6 +40,19 @@ function draw() {
     let midEnergy = fft.getEnergy('mid');
     let trebleEnergy = fft.getEnergy('treble');
     let intensity = map(bassEnergy, 0, 255, 0, 80);
+
+    // Check for audio events and add to log
+    if (volume > 0.4) {
+        logMessages.push(`Loud Event Detected: ${volume.toFixed(2)}`);
+    }
+    if (bassEnergy > 150) {
+        logMessages.push(`Strong Bass Detected: ${bassEnergy.toFixed(2)}`);
+    }
+
+    // Keep the log at a fixed size
+    while (logMessages.length > MAX_LOG_MESSAGES) {
+        logMessages.shift();
+    }
 
     // 2. Draw the Solid Background
     background(50); 
@@ -118,6 +134,19 @@ function draw() {
     text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, width - 10, height - 50);
     text(`Glitch Intensity: ${intensity.toFixed(2)}`, width - 10, height - 30);
     text(`Stroke Weight:    ${sw.toFixed(2)}`, width - 10, height - 10);
+
+    // --- Live Data Log ---
+    fill(255);
+    textSize(14);
+    textAlign(RIGHT);
+    let logY = 40;
+    for (let i = 0; i < logMessages.length; i++) {
+        // Display with a slight opacity fade for older messages
+        let alpha = map(i, 0, logMessages.length - 1, 50, 255);
+        fill(255, alpha);
+        text(logMessages[i], width - 10, logY);
+        logY += 20;
+    }
 
 
     // Visual indicator for Intensity
