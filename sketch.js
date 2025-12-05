@@ -34,6 +34,8 @@ function draw() {
     let spectrum = fft.analyze(); 
     
     let bassEnergy = fft.getEnergy('bass');
+    let midEnergy = fft.getEnergy('mid');
+    let trebleEnergy = fft.getEnergy('treble');
     let intensity = map(bassEnergy, 0, 255, 0, 80);
 
     // 2. Draw the Solid Background
@@ -41,8 +43,17 @@ function draw() {
 
     // 3. Apply the 'Hole Punch' Masking Effect
     blendMode(DIFFERENCE);
-    noStroke();
-    fill(255);
+
+    let r = map(trebleEnergy, 0, 255, 0, 255);
+    let g = map(midEnergy, 0, 255, 0, 255);
+    let b = map(bassEnergy, 0, 255, 0, 255);
+    
+    fill(r, g, b);
+
+    let sw = map(bassEnergy, 0, 255, 0, 10);
+    strokeWeight(sw);
+    stroke(255);
+
 
     let xSpacing = width / NUM_BUBBLES_X;
     let ySpacing = height / NUM_BUBBLES_Y;
@@ -79,14 +90,36 @@ function draw() {
         rect(x, height, 1, -h); // Draw from the bottom up
     }
 
+
+    // --- Data to Visuals Connection Lines ---
+    stroke(255, 50);
+    strokeWeight(0.5);
+    let dataDisplayX = 150; 
+    let dataDisplayY = height - 70;
+    
+    for (let i = 0; i < NUM_BUBBLES_X; i += 6) {
+        for (let j = 0; j < NUM_BUBBLES_Y; j+= 6) {
+             let x = (i * xSpacing) + (xSpacing / 2);
+             let y = (j * ySpacing) + (ySpacing / 2);
+             line(dataDisplayX, dataDisplayY, x, y);
+        }
+    }
+
+
     // --- Data Display ---
     noStroke();
     fill(255);
-    textSize(16);
+    textSize(20);
     textAlign(LEFT);
-    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 60);
-    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 40);
-    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 20);
+    text("AI DATA ANALYSIS", 10, height - 150);
+    
+    textSize(16);
+    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 120);
+    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 100);
+    text(`Mid Energy:       ${midEnergy.toFixed(2)}`, 10, height - 80);
+    text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, 10, height - 60);
+    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 40);
+    text(`Stroke Weight:    ${sw.toFixed(2)}`, 10, height - 20);
 
     // Visual indicator for Intensity
     fill(255, 0, 0, 150);
