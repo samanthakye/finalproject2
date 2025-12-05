@@ -65,6 +65,7 @@ function draw() {
     smoothedVolume += (volume - smoothedVolume) * smoothingFactor;
 
     fft.analyze(); // Analyze the frequency spectrum
+    let waveform = fft.waveform(); // Get waveform data
     
     let bassEnergy = fft.getEnergy('bass');
     let midEnergy = fft.getEnergy('mid');
@@ -152,6 +153,8 @@ function draw() {
             circle(x, y, circleSize);
         }
     }
+
+    drawWaveform(waveform);
 }
 
 function mousePressed() {
@@ -165,6 +168,24 @@ function mousePressed() {
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     initializePositions();
+}
+
+function drawWaveform(waveform) {
+    let waveY = height;
+    let waveHeight = 150;
+
+    noFill();
+    stroke(0, 150, 255, 150);
+    strokeWeight(2);
+    beginShape();
+
+    for (let i = 0; i < waveform.length; i++) {
+        let x = map(i, 0, waveform.length, 0, width);
+        let y = map(waveform[i], -1, 1, waveY, waveY - waveHeight);
+        vertex(x, y);
+    }
+
+    endShape();
 }
 
 function userStartAudio() {
