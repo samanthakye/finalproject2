@@ -10,9 +10,7 @@ const NUM_BUBBLES_Y = 20; // Number of bubbles vertically
 function setup() {
     createCanvas(windowWidth, windowHeight); 
 
-    video = createCapture(VIDEO); 
-    video.size(width, height);
-    video.hide(); 
+
 
     mic = new p5.AudioIn();
     fft = new p5.FFT();
@@ -38,12 +36,8 @@ function draw() {
     let bassEnergy = fft.getEnergy('bass');
     let intensity = map(bassEnergy, 0, 255, 0, 80);
 
-    // 2. Draw the Video Background
-    push();
-    translate(width, 0);
-    scale(-1, 1);
-    image(video, 0, 0, width, height);
-    pop(); 
+    // 2. Draw the Solid Background
+    background(50); 
 
     // 3. Apply the 'Hole Punch' Masking Effect
     blendMode(DIFFERENCE);
