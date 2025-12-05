@@ -8,6 +8,35 @@ const NUM_BUBBLES_X = 30; // Number of bubbles horizontally
 const NUM_BUBBLES_Y = 20; // Number of bubbles vertically
 const TOTAL_BUBBLES = NUM_BUBBLES_X * NUM_BUBBLES_Y;
 
+// --- SPEECH RECOGNITION SETUP ---
+window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+if (window.SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    let finalTranscript = '';
+    const transcriptionDiv = document.getElementById('transcription');
+
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+    transcriptionDiv.innerHTML = finalTranscript + '<i style="color:grey;">' + interimTranscript + '</i>';
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+  };
+
+}
+
 function setup() {
     createCanvas(windowWidth, windowHeight); 
 
@@ -25,6 +54,11 @@ function setup() {
     textAlign(CENTER, CENTER);
     textSize(24);
     textFont('monospace');
+
+    if (!window.SpeechRecognition) {
+      const transcriptionDiv = document.getElementById('transcription');
+      transcriptionDiv.innerHTML = "Speech recognition is not supported in this browser.";
+    }
 }
 
 function draw() {
@@ -130,6 +164,10 @@ function mousePressed() {
     // Start audio on user gesture
     userStartAudio().then(() => {
         mic.start();
+        if (recognition) {
+          recognition.start();
+          console.log('Speech recognition started.');
+        }
         audioStarted = true;
     });
   }
