@@ -108,9 +108,7 @@ function draw() {
     
     fill(r, g, b);
 
-    let sw = map(bassEnergy, 0, 255, 0, 10);
-    strokeWeight(sw);
-    stroke(255);
+    // Removed stroke for solid dots
 
 
     let xSpacing = width / NUM_BUBBLES_X;
