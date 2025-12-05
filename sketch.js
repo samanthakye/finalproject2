@@ -5,6 +5,11 @@ let audioStarted = false;
 const NUM_BUBBLES_X = 30;
 const NUM_BUBBLES_Y = 20;
 
+// Base colors for blending
+let bassColorMain;
+let midColorMain;
+let trebleColorMain;
+
 function setup() {
     createCanvas(windowWidth, windowHeight); 
 
@@ -15,6 +20,11 @@ function setup() {
     textAlign(CENTER, CENTER);
     textSize(24);
     textFont('monospace');
+
+    // Initialize base colors
+    bassColorMain = color(255, 60, 0);   // Deep Orange/Red
+    midColorMain = color(0, 200, 100);   // Vibrant Green
+    trebleColorMain = color(50, 100, 255); // Bright Blue
 }
         
 function draw() {
@@ -37,12 +47,16 @@ function draw() {
     // Intensity of movement is driven by a combination of bass and overall volume
     let intensity = constrain(map(bassEnergy + volume * 100, 0, 255, 0, 80), 0, 80);
 
-    // Color of the dots is mapped to the energy in different frequency bands
-    let r = map(bassEnergy, 0, 255, 100, 255);
-    let g = map(midEnergy, 0, 255, 50, 200);
-    let b = map(trebleEnergy, 0, 255, 150, 255);
+    // Normalize energies for blending
+    let normBass = map(bassEnergy, 0, 255, 0, 1);
+    let normMid = map(midEnergy, 0, 255, 0, 1);
+    let normTreble = map(trebleEnergy, 0, 255, 0, 1);
+
+    // Blend colors based on energy levels
+    let color1 = lerpColor(bassColorMain, midColorMain, normMid);
+    let finalColor = lerpColor(color1, trebleColorMain, normTreble);
     
-    fill(r, g, b);
+    fill(finalColor);
     noStroke();
 
     let xSpacing = width / NUM_BUBBLES_X;
