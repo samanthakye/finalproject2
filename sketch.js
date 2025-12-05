@@ -32,10 +32,12 @@ let dots = [];
 
 // Dot class
 class Dot {
-    constructor(x, y, baseSize) {
+    constructor(x, y, baseSize, i, j) {
         this.x = x;
         this.y = y;
         this.baseSize = baseSize;
+        this.i = i;
+        this.j = j;
         this.currentSize = baseSize;
         this.energy = 0;
     }
@@ -54,8 +56,8 @@ class Dot {
     display(intensity) {
         noStroke();
         
-        let xNoise = map(noise(frameCount * 0.01 + this.x * 10), 0, 1, -intensity, intensity);
-        let yNoise = map(noise(frameCount * 0.02 + this.y * 5), 0, 1, -intensity, intensity);
+        let xNoise = map(noise(frameCount * 0.01 + this.i * 10), 0, 1, -intensity, intensity);
+        let yNoise = map(noise(frameCount * 0.02 + this.j * 5), 0, 1, -intensity, intensity);
         
         circle(this.x + xNoise, this.y + yNoise, this.currentSize);
     }
@@ -86,7 +88,7 @@ function setup() {
             let x = (i * xSpacing) + (xSpacing / 2);
             let y = (j * ySpacing) + (ySpacing / 2);
             let baseSize = (xSpacing + ySpacing) / 2 * 0.8;
-            dots[i][j] = new Dot(x, y, baseSize);
+            dots[i][j] = new Dot(x, y, baseSize, i, j);
         }
     }
 }
