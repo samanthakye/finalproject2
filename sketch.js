@@ -105,7 +105,7 @@ function setup() {
             let bassEnergy = fft.getEnergy('bass');
             let midEnergy = fft.getEnergy('mid');
             let trebleEnergy = fft.getEnergy('treble');
-            let intensity = map(bassEnergy, 0, 255, 0, 80);
+            let intensity = constrain(map(bassEnergy + volume * 100, 0, 255, 0, 80), 0, 80);
 
             // Update volume history
             volumeHistory.push(volume);
@@ -215,10 +215,15 @@ function setup() {
                 }
             }
 
-            // --- Data Display ---
+            // --- UI & Data Visualization ---
+
+            // Visual indicator for Intensity
             noStroke();
+            fill(255, 0, 0, 150);
+            rect(10, 10, intensity * 5, 20);
+
+            // Data Display
             fill(0); 
-            
             textSize(16);
             textAlign(RIGHT);
             text(`Mic Volume:       ${volume.toFixed(4)}`, width - 10, 30);
@@ -227,7 +232,7 @@ function setup() {
             text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, width - 10, 90);
             text(`Avg Volume:       ${averageVolume.toFixed(4)}`, width - 10, 110); // Display average volume
             
-            // --- Data to Visuals Connection Lines ---
+            // Data to Visuals Connection Lines
             stroke(0, 50); // Changed to black with transparency
             strokeWeight(0.5);
             let dataDisplayX = 10; 
@@ -240,10 +245,6 @@ function setup() {
                      line(dataDisplayX, dataDisplayY, x, y);
                 }
             }
-
-            // Visual indicator for Intensity
-            fill(255, 0, 0, 150);
-            rect(10, 10, intensity * 5, 20);
 
             // Visualize the full audio spectrum
             noStroke();
