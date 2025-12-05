@@ -109,17 +109,15 @@ function draw() {
     // --- Data Display ---
     noStroke();
     fill(255);
-    textSize(20);
-    textAlign(LEFT);
-    text("AI DATA ANALYSIS", 10, height - 150);
     
     textSize(16);
-    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 120);
-    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 100);
-    text(`Mid Energy:       ${midEnergy.toFixed(2)}`, 10, height - 80);
-    text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, 10, height - 60);
-    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 40);
-    text(`Stroke Weight:    ${sw.toFixed(2)}`, 10, height - 20);
+    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 110);
+    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 90);
+    text(`Mid Energy:       ${midEnergy.toFixed(2)}`, 10, height - 70);
+    text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, 10, height - 50);
+    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 30);
+    text(`Stroke Weight:    ${sw.toFixed(2)}`, 10, height - 10);
+
 
     // Visual indicator for Intensity
     fill(255, 0, 0, 150);
