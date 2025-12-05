@@ -10,8 +10,30 @@ let bassColorMain;
 let midColorMain;
 let trebleColorMain;
 
+let smoothedVolume = 0;
+let smoothingFactor = 0.1; // Adjust this value to change the smoothness (0.0 to 1.0)
+
+let bubblePositions;
+
+function initializePositions() {
+    bubblePositions = Array(NUM_BUBBLES_X).fill(0).map(() => Array(NUM_BUBBLES_Y).fill(0).map(() => ({x: 0, y: 0, dataCollected: 0})));
+    let xSpacing = width / NUM_BUBBLES_X;
+    let ySpacing = height / NUM_BUBBLES_Y;
+    for (let i = 0; i < NUM_BUBBLES_X; i++) {
+        for (let j = 0; j < NUM_BUBBLES_Y; j++) {
+            bubblePositions[i][j] = {
+                x: (i * xSpacing) + (xSpacing / 2),
+                y: (j * ySpacing) + (ySpacing / 2),
+                dataCollected: 0
+            };
+        }
+    }
+}
+
 function setup() {
     createCanvas(windowWidth, windowHeight); 
+
+    initializePositions();
 
     mic = new p5.AudioIn();
     fft = new p5.FFT();
@@ -37,6 +59,9 @@ function draw() {
     background(0);
 
     let volume = mic.getLevel(); 
+    
+    // Smooth the volume
+    smoothedVolume += (volume - smoothedVolume) * smoothingFactor;
     fft.analyze(); // Analyze the frequency spectrum
     
     let bassEnergy = fft.getEnergy('bass');
@@ -66,16 +91,32 @@ function draw() {
             let baseSize = (xSpacing + ySpacing) / 2 * 1.2; 
             
             // The size of the circle is reactive to the overall volume
-            let amplifiedVolume = min(volume * 5, 1.0); 
+            let amplifiedVolume = min(smoothedVolume * 5, 1.0); 
             let circleSize = map(amplifiedVolume, 0, 1, baseSize * 0.1, baseSize * 2.0);
             
-            // The movement of the circle is based on Perlin noise, influenced by 'intensity'
+            let currentPos = bubblePositions[i][j];
+
             let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
             let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
 
             let x = (i * xSpacing) + (xSpacing / 2) + xNoise;
             let y = (j * ySpacing) + (ySpacing / 2) + yNoise; 
             
+            // --- Aura Logic ---
+            currentPos.dataCollected += smoothedVolume;
+            currentPos.dataCollected *= 0.995; // Slow decay
+
+            let maxAuraSize = baseSize * 4;
+            let auraSize = map(currentPos.dataCollected, 0, 2, circleSize, maxAuraSize);
+            auraSize = max(auraSize, circleSize);
+
+            let auraColor = color(red(finalColor), green(finalColor), blue(finalColor), 30);
+            fill(auraColor);
+            circle(x, y, auraSize);
+            // --- End Aura Logic ---
+
+            // Draw the main circle
+            fill(finalColor);
             circle(x, y, circleSize);
         }
     }
@@ -91,6 +132,7 @@ function mousePressed() {
 
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
+    initializePositions();
 }
 
 function userStartAudio() {
