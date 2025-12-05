@@ -63,6 +63,19 @@ function setup() {
             }
             
             blendMode(BLEND); 
+            
+            // Visual indicator for Intensity
+            fill(255, 0, 0, 150);
+            rect(10, 10, intensity * 5, 20);
+
+            // Visualize the full audio spectrum
+            noStroke();
+            fill(0, 255, 0, 100); // Green for the spectrum
+            for (let i = 0; i < spectrum.length; i++) {
+                let x = map(log(i), 0, log(spectrum.length), 0, width);
+                let h = map(spectrum[i], 0, 255, 0, height * 0.5);
+                rect(x, height, 1, -h); // Draw from the bottom up
+            }
 }
 
 function mousePressed() {
