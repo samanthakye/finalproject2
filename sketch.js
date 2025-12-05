@@ -36,7 +36,7 @@ function draw() {
     let spectrum = fft.analyze(); 
     
     let bassEnergy = fft.getEnergy('bass');
-    let intensity = map(bassEnergy, 0, 255, 0, 40);
+    let intensity = map(bassEnergy, 0, 255, 0, 80);
 
     // 2. Draw the Video Background
     push();
