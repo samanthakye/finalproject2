@@ -1,5 +1,6 @@
-html, body {
+html, body, canvas {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  display: block; /* Ensure canvas doesn't have extra space below */
 }
