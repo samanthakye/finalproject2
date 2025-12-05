@@ -1,41 +1,46 @@
 let video; // Stores the camera feed
-let mic;   // Stores the microphone input
-let fft;   // Used for frequency analysis
-let audioStarted = false; // To track if audio has been started by user
 
-// --- NEW CONSTANTS FOR SCREEN CROWDING ---
-const NUM_BUBBLES_X = 30; // Number of bubbles horizontally
-const NUM_BUBBLES_Y = 20; // Number of bubbles vertically
-const TOTAL_BUBBLES = NUM_BUBBLES_X * NUM_BUBBLES_Y;
+// --- DATA FROM SERVER ---
+// These variables will be updated by the data coming from the broadcaster phone
+let volume = 0;
+let bassEnergy = 0;
+let intensity = 0;
+let transcribedText = 'Waiting for transcription...';
 
-// --- SPEECH RECOGNITION SETUP ---
-window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition;
-if (window.SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
+// --- VISUALS CONSTANTS ---
+const NUM_BUBBLES_X = 30;
+const NUM_BUBBLES_Y = 20;
 
-  recognition.onresult = (event) => {
-    let interimTranscript = '';
-    let finalTranscript = '';
-    const transcriptionDiv = document.getElementById('transcription');
+// --- WEBSOCKET CLIENT SETUP ---
+const socket = new WebSocket('ws://localhost:8080');
 
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript;
-      } else {
-        interimTranscript += event.results[i][0].transcript;
-      }
-    }
-    transcriptionDiv.innerHTML = finalTranscript + '<i style="color:grey;">' + interimTranscript + '</i>';
-  };
+socket.onopen = () => {
+    console.log('Connected to relay server.');
+};
 
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-  };
+socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Received data:', data);
 
-}
+    // Update global variables with data from the server
+    volume = data.volume || 0;
+    bassEnergy = data.bassEnergy || 0;
+    transcribedText = data.text || '';
+
+    // The 'intensity' is now derived from the server's bassEnergy data
+    intensity = map(bassEnergy, 0, 255, 0, 40);
+};
+
+socket.onerror = (error) => {
+    console.error('WebSocket Error:', error);
+    transcribedText = 'Connection error. Is the server running?';
+};
+
+socket.onclose = () => {
+    console.log('Disconnected from relay server.');
+    transcribedText = 'Disconnected from server.';
+};
+
 
 function setup() {
     createCanvas(windowWidth, windowHeight); 
@@ -44,131 +49,78 @@ function setup() {
     video.size(width, height);
     video.hide(); 
 
-    mic = new p5.AudioIn();
-    // Note: mic.start() is now called in mousePressed()
-
-    fft = new p5.FFT();
-    fft.setInput(mic);
+    // No local mic or FFT needed anymore!
     
-    // Set up text for the initial message
     textAlign(CENTER, CENTER);
     textSize(24);
     textFont('monospace');
-
-    if (!window.SpeechRecognition) {
-      const transcriptionDiv = document.getElementById('transcription');
-      transcriptionDiv.innerHTML = "Speech recognition is not supported in this browser.";
-    }
 }
 
 function draw() {
-    // If audio hasn't started, show a message and wait.
-    if (!audioStarted) {
-        background(0);
-        fill(255);
-        text("Click to start audio", width / 2, height / 2);
-        return; // Stop the rest of the draw loop
-    }
-
-    // 1. Analyze Sound Data
-    let volume = mic.getLevel(); 
-    let spectrum = fft.analyze(); 
+    // No more "Click to start" message, it runs automatically
     
-    // Use the low-frequency energy (bass/loud sounds) to control the glitch intensity
-    let bassEnergy = fft.getEnergy('bass');
-    let intensity = map(bassEnergy, 0, 255, 0, 40); // Increased max distortion for impact
+    // The draw loop now continuously uses the 'volume' and 'intensity'
+    // variables that are being updated by the WebSocket connection.
 
-    // 2. Draw the Video Background
+    // 1. Draw the Video Background
     push();
     translate(width, 0);
     scale(-1, 1);
     image(video, 0, 0, width, height);
     pop(); 
 
-    // 3. Apply the 'Hole Punch' Masking Effect
-    
-    // Set the blend mode to create the visual cut-out effect
+    // 2. Apply the 'Hole Punch' Masking Effect
     blendMode(DIFFERENCE);
-
     noStroke();
-    fill(255); // Draw circles in white
+    fill(255);
 
-    // Calculate the spacing for a grid that covers the whole screen
     let xSpacing = width / NUM_BUBBLES_X;
     let ySpacing = height / NUM_BUBBLES_Y;
 
-    // --- NEW: Loop through a 2D grid (X and Y) to cover the screen ---
     for (let i = 0; i < NUM_BUBBLES_X; i++) {
         for (let j = 0; j < NUM_BUBBLES_Y; j++) {
-            
-            // --- Reaction to Sound ---
-            // Base size is now calculated based on grid spacing
             let baseSize = (xSpacing + ySpacing) / 2 * 0.8; 
-            
-            // Size: Volume affects the size, ensuring a minimum size
             let circleSize = map(volume, 0, 1, baseSize * 0.5, baseSize * 1.5);
             
-            // Position: Add noise based on sound intensity to create a 'glitch'
-            // Use different noise seeds (i*10 and j*5) to make the movement unique for each circle
             let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
             let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
 
-            // Calculate the centered grid position, then add the noise
             let x = (i * xSpacing) + (xSpacing / 2) + xNoise;
             let y = (j * ySpacing) + (ySpacing / 2) + yNoise; 
             
-            // Draw the solid circle
             circle(x, y, circleSize);
         }
     }
     
-    // Reset blend mode 
     blendMode(BLEND); 
 
-    // --- AI/Code "Thought Process" Visualization ---
-    // This section shows the data driving the visual effects.
+    // --- VISUALIZATION & DATA DISPLAY ---
 
-    // 1. Visualize the full audio spectrum
-    // The 'spectrum' variable was already calculated at the start of draw()
-    noStroke();
-    fill(0, 255, 0, 100); // Green for the spectrum
-    for (let i = 0; i < spectrum.length; i++) {
-        // Use a logarithmic scale for the x-axis for a more conventional frequency representation
-        let x = map(log(i), 0, log(spectrum.length), 0, width);
-        // Map the spectrum value to a height
-        let h = map(spectrum[i], 0, 255, 0, height * 0.5);
-        rect(x, height, 1, -h); // Draw from the bottom up
-    }
-
-    // 2. Display raw data as text
-    noStroke();
+    // 1. Display raw data from the server
     fill(255);
     textSize(16);
     textFont('monospace');
+    textAlign(LEFT); // Align text to the left
+    text(`Live Volume:      ${volume.toFixed(4)}`, 10, height - 60);
+    text(`Live Bass Energy: ${bassEnergy.toFixed(2)}`, 10, height - 40);
+    text(`Live Intensity:   ${intensity.toFixed(2)}`, 10, height - 20);
 
-    // Display the values calculated at the beginning of draw()
-    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 60);
-    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 40);
-    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 20);
-
-    // 3. Visual indicator for Intensity (the red bar)
+    // 2. Visual indicator for Intensity
     fill(255, 0, 0, 150);
     rect(10, 10, intensity * 5, 20);
-    fill(255);
-    noStroke();
-    
+
+    // 3. Display the live transcription text
+    // The 'transcription' div is still in index.html and styled by style.css
+    const transcriptionDiv = document.getElementById('transcription');
+    transcriptionDiv.textContent = transcribedText;
 }
 
+// mousePressed is no longer needed to start audio, but you could use it
+// for other interactions, like this:
 function mousePressed() {
-  if (!audioStarted) {
-    // Start audio on user gesture
-    userStartAudio().then(() => {
-        mic.start();
-        if (recognition) {
-          recognition.start();
-          console.log('Speech recognition started.');
-        }
-        audioStarted = true;
-    });
-  }
+    console.log("Mouse pressed. Current intensity:", intensity);
+    // Example of reacting to a click: trigger a visual burst
+    // This is just an example of how you can still have interactions
+    fill(255, 255, 0, 100);
+    rect(0, 0, width, height);
 }
