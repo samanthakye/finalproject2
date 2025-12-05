@@ -10,14 +10,56 @@ const MAX_LOG_MESSAGES = 10; // Max number of log messages on screen
 
 let logMessages = []; // Array to store log messages
 
+// --- Speech Recognition Vars ---
+let speechRec;
+let transcribedText = ""; // Latest live transcript
+let transcriptHistory = []; // History of finalized transcripts
+const MAX_HISTORY = 5; // Max number of history lines to show
+
+
 function setup() {
     createCanvas(windowWidth, windowHeight); 
-
-
 
     mic = new p5.AudioIn();
     fft = new p5.FFT();
     fft.setInput(mic);
+    
+    // --- Initialize Speech Recognition ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        speechRec = new SpeechRecognition();
+        speechRec.continuous = true;
+        speechRec.interimResults = true;
+        speechRec.lang = 'en-US';
+
+        speechRec.onresult = (event) => {
+            let currentTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    // Once a phrase is finalized, add it to history
+                    transcriptHistory.push(transcript.trim() + ' ');
+                    if(transcriptHistory.length > MAX_HISTORY) {
+                        transcriptHistory.shift();
+                    }
+                    transcribedText = ''; // Clear the live text
+                } else {
+                    // Otherwise, it's an interim result
+                    currentTranscript += transcript;
+                }
+            }
+            transcribedText = currentTranscript;
+        };
+
+        // Restart recognition if it ends
+        speechRec.onend = () => {
+            if (audioStarted) { // Only restart if it's supposed to be on
+                speechRec.start();
+            }
+        };
+    } else {
+        console.log("Speech recognition not supported by this browser.");
+    }
     
     textAlign(CENTER, CENTER);
     textSize(24);
@@ -148,6 +190,21 @@ function draw() {
         logY += 20;
     }
 
+    // --- Transcription Display ---
+    textAlign(LEFT);
+    // Display history
+    let historyY = 40;
+    for(let i = 0; i < transcriptHistory.length; i++) {
+        let alpha = map(i, 0, transcriptHistory.length - 1, 50, 150);
+        fill(255, alpha);
+        text(transcriptHistory[i], 10, historyY);
+        historyY += 20;
+    }
+    // Display live text with a "cursor"
+    fill(255);
+    let cursor = (frameCount % 60 < 30) ? '_' : '';
+    text(`> ${transcribedText}${cursor}`, 10, historyY);
+
 
     // Visual indicator for Intensity
     fill(255, 0, 0, 150);
@@ -158,6 +215,9 @@ function mousePressed() {
   if (!audioStarted) {
     userStartAudio().then(() => {
         mic.start();
+        if (speechRec) {
+            speechRec.start();
+        }
         audioStarted = true;
     });
   }
