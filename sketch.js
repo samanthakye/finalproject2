@@ -50,7 +50,8 @@ function setup() {
             for (let i = 0; i < NUM_BUBBLES_X; i++) {
                 for (let j = 0; j < NUM_BUBBLES_Y; j++) {
                     let baseSize = (xSpacing + ySpacing) / 2 * 1.2; 
-                    let circleSize = map(volume, 0, 1, baseSize * 0.5, baseSize * 1.5);
+                    let amplifiedVolume = min(volume * 5, 1.0);
+                    let circleSize = map(amplifiedVolume, 0, 1, baseSize * 0.5, baseSize * 2.5);
                     
                     let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
                     let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
