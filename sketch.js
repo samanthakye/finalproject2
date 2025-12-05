@@ -69,7 +69,7 @@ function setup() {
 function draw() {
     if (!audioStarted) {
         background(0);
-        fill(255);
+        fill(0);
         text("Click to start audio", width / 2, height / 2);
         return; // Stop the rest of the draw loop
     }
@@ -166,7 +166,7 @@ function draw() {
 
     // --- Data Display ---
     noStroke();
-    fill(255);
+    fill(0); // Changed to black
     
     textSize(16);
     textAlign(RIGHT);
@@ -178,14 +178,14 @@ function draw() {
     text(`Stroke Weight:    ${sw.toFixed(2)}`, width - 10, height - 10);
 
     // --- Live Data Log ---
-    fill(255);
+    fill(0); // Changed to black
     textSize(14);
     textAlign(RIGHT);
     let logY = 40;
     for (let i = 0; i < logMessages.length; i++) {
         // Display with a slight opacity fade for older messages
         let alpha = map(i, 0, logMessages.length - 1, 50, 255);
-        fill(255, alpha);
+        fill(0, alpha); // Changed to black with alpha
         text(logMessages[i], width - 10, logY);
         logY += 20;
     }
@@ -196,12 +196,12 @@ function draw() {
     let historyY = 40;
     for(let i = 0; i < transcriptHistory.length; i++) {
         let alpha = map(i, 0, transcriptHistory.length - 1, 50, 150);
-        fill(255, alpha);
+        fill(0, alpha); // Changed to black with alpha
         text(transcriptHistory[i], 10, historyY);
         historyY += 20;
     }
     // Display live text with a "cursor"
-    fill(255);
+    fill(0); // Changed to black
     let cursor = (frameCount % 60 < 30) ? '_' : '';
     text(`> ${transcribedText}${cursor}`, 10, historyY);
 
