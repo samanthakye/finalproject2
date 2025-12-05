@@ -111,12 +111,13 @@ function draw() {
     fill(255);
     
     textSize(16);
-    text(`Mic Volume:       ${volume.toFixed(4)}`, 10, height - 110);
-    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, 10, height - 90);
-    text(`Mid Energy:       ${midEnergy.toFixed(2)}`, 10, height - 70);
-    text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, 10, height - 50);
-    text(`Glitch Intensity: ${intensity.toFixed(2)}`, 10, height - 30);
-    text(`Stroke Weight:    ${sw.toFixed(2)}`, 10, height - 10);
+    textAlign(RIGHT);
+    text(`Mic Volume:       ${volume.toFixed(4)}`, width - 10, height - 110);
+    text(`Bass Energy:      ${bassEnergy.toFixed(2)}`, width - 10, height - 90);
+    text(`Mid Energy:       ${midEnergy.toFixed(2)}`, width - 10, height - 70);
+    text(`Treble Energy:    ${trebleEnergy.toFixed(2)}`, width - 10, height - 50);
+    text(`Glitch Intensity: ${intensity.toFixed(2)}`, width - 10, height - 30);
+    text(`Stroke Weight:    ${sw.toFixed(2)}`, width - 10, height - 10);
 
 
     // Visual indicator for Intensity
