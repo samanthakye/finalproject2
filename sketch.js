@@ -22,20 +22,19 @@ function setup() {
     textFont('monospace');
 
     // Initialize base colors
-    bassColorMain = color(255, 60, 0);   // Deep Orange/Red
-    midColorMain = color(0, 200, 100);   // Vibrant Green
-    trebleColorMain = color(50, 100, 255); // Bright Blue
+    bassColorMain = color(20, 20, 100);   // Deep Blue
+    midColorMain = color(80, 80, 180);   // Medium Blue/Violet
+    trebleColorMain = color(150, 200, 255); // Light Cyan/Blue
 }
         
 function draw() {
-    if (!audioStarted) {
-        background(255);
-        fill(0);
+            if (!audioStarted) {
+                background(0);        fill(0);
         text("Click to start audio", width / 2, height / 2);
         return;
     }
 
-    background(255); // White background
+    background(0);
 
     let volume = mic.getLevel(); 
     fft.analyze(); // Analyze the frequency spectrum
