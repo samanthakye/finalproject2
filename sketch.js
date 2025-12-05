@@ -103,7 +103,7 @@ function setup() {
             let intensity = map(bassEnergy, 0, 255, 0, 80);
         
             // 2. Draw the Solid Background
-            background(255); 
+            background(0); 
         
             // 3. Apply the 'Hole Punch' Masking Effect
             blendMode(DIFFERENCE);
@@ -113,8 +113,7 @@ function setup() {
             let b = map(bassEnergy, 0, 255, 0, 255);
             
             fill(r, g, b);
-        
-            // Removed stroke for solid dots
+            noStroke();
         
             let xSpacing = width / NUM_BUBBLES_X;
             let ySpacing = height / NUM_BUBBLES_Y;
