@@ -13,6 +13,9 @@ let trebleColorMain;
 let smoothedVolume = 0;
 let smoothingFactor = 0.1; // Adjust this value to change the smoothness (0.0 to 1.0)
 
+let observationState = 'IDLE';
+const volumeThreshold = 0.02;
+
 let bubblePositions;
 
 function initializePositions() {
@@ -64,37 +67,26 @@ function draw() {
     // Smooth the volume
     smoothedVolume += (volume - smoothedVolume) * smoothingFactor;
 
+    // --- State Machine ---
+    if (smoothedVolume > volumeThreshold) {
+        observationState = 'ACTIVE';
+    } else {
+        observationState = 'IDLE';
+    }
+
     fft.analyze(); // Analyze the frequency spectrum
     let waveform = fft.waveform(); // Get waveform data
     
     let bassEnergy = fft.getEnergy('bass');
     let midEnergy = fft.getEnergy('mid');
     let trebleEnergy = fft.getEnergy('treble');
-
-    // --- AI Clustering Logic ---
-    // 1. Determine dominant frequency
-    let dominantEnergy = 'none';
-    const energyThreshold = 100; // Only react if energy is significant
-    if (bassEnergy > energyThreshold && bassEnergy > midEnergy && bassEnergy > trebleEnergy) {
-        dominantEnergy = 'bass';
-    } else if (midEnergy > energyThreshold && midEnergy > bassEnergy && midEnergy > trebleEnergy) {
-        dominantEnergy = 'mid';
-    } else if (trebleEnergy > energyThreshold && trebleEnergy > bassEnergy && trebleEnergy > midEnergy) {
-        dominantEnergy = 'treble';
-    }
-    // --- End AI Logic ---
     
     // Intensity of movement is driven by a combination of bass and overall volume
     let intensity = constrain(map(bassEnergy + volume * 100, 0, 255, 0, 80), 0, 80);
 
-    // Normalize energies for blending
-    let normBass = map(bassEnergy, 0, 255, 0, 1);
-    let normMid = map(midEnergy, 0, 255, 0, 1);
-    let normTreble = map(trebleEnergy, 0, 255, 0, 1);
-
     // Blend colors based on energy levels
-    let color1 = lerpColor(bassColorMain, midColorMain, normMid);
-    let finalColor = lerpColor(color1, trebleColorMain, normTreble);
+    let color1 = lerpColor(bassColorMain, midColorMain, map(midEnergy, 0, 255, 0, 1));
+    let finalColor = lerpColor(color1, trebleColorMain, map(trebleEnergy, 0, 255, 0, 1));
     
     noStroke();
 
@@ -104,20 +96,20 @@ function draw() {
     for (let i = 0; i < NUM_BUBBLES_X; i++) {
         for (let j = 0; j < NUM_BUBBLES_Y; j++) {
             let baseSize = (xSpacing + ySpacing) / 2 * 1.2; 
-            
-            // The size of the circle is reactive to the overall volume
-            let amplifiedVolume = min(smoothedVolume * 5, 1.0); 
-            let circleSize = map(amplifiedVolume, 0, 1, baseSize * 0.1, baseSize * 2.0);
+            let circleSize = map(min(smoothedVolume * 5, 1.0), 0, 1, baseSize * 0.1, baseSize * 2.0);
             
             let currentPos = bubblePositions[i][j];
-
-            // --- AI Loose Grid Logic ---
             let homeX = (i * xSpacing) + (xSpacing / 2);
             let homeY = (j * ySpacing) + (ySpacing / 2);
-            
-            let maxDrift = xSpacing * 2;
 
-            // A large-scale, slow noise to make the whole grid wave and distort organically
+            // --- State-Dependent Grid Logic ---
+            let maxDrift;
+            if (observationState === 'IDLE') {
+                maxDrift = xSpacing * 2;
+            } else {
+                maxDrift = xSpacing * 0.2; // Much tighter grid when active
+            }
+
             let gridWaveX = map(noise(frameCount * 0.0005 + 2000), 0, 1, -maxDrift, maxDrift);
             let gridWaveY = map(noise(frameCount * 0.0005 + 3000), 0, 1, -maxDrift, maxDrift);
 
@@ -127,7 +119,6 @@ function draw() {
             let lerpFactor = 0.05;
             currentPos.x = lerp(currentPos.x, targetX, lerpFactor);
             currentPos.y = lerp(currentPos.y, targetY, lerpFactor);
-            // --- End AI Logic ---
 
             let xNoise = map(noise(frameCount * 0.01 + i * 10), 0, 1, -intensity, intensity);
             let yNoise = map(noise(frameCount * 0.02 + j * 5), 0, 1, -intensity, intensity);
@@ -137,35 +128,58 @@ function draw() {
             
             // --- Aura Logic ---
             currentPos.dataCollected += smoothedVolume;
-            currentPos.dataCollected *= 0.995; // Slow decay
-
+            currentPos.dataCollected *= 0.995;
             let maxAuraSize = baseSize * 4;
             let auraSize = map(currentPos.dataCollected, 0, 2, circleSize, maxAuraSize);
             auraSize = max(auraSize, circleSize);
-
             let auraColor = color(red(finalColor), green(finalColor), blue(finalColor), 30);
             fill(auraColor);
             circle(x, y, auraSize);
-            // --- End Aura Logic ---
 
-            // Draw the main circle
+            // --- Main Dot (Iris) Drawing ---
             fill(finalColor);
             circle(x, y, circleSize);
+
+            // --- Pupil Drawing Logic ---
+            let pupilSize = circleSize * 0.4;
+            let pupilX = x;
+            let pupilY = y;
+
+            if (observationState === 'IDLE') {
+                let idleGazeX = map(noise(frameCount * 0.005 + i * 20), 0, 1, -circleSize * 0.3, circleSize * 0.3);
+                let idleGazeY = map(noise(frameCount * 0.005 + j * 20 + 50), 0, 1, -circleSize * 0.3, circleSize * 0.3);
+                pupilX += idleGazeX;
+                pupilY += idleGazeY;
+            } else { // 'ACTIVE' state
+                let sourceX = width / 2;
+                let sourceY = height;
+                let angle = atan2(sourceY - y, sourceX - x);
+                let pupilTravelDist = circleSize * 0.3;
+                pupilX += cos(angle) * pupilTravelDist;
+                pupilY += sin(angle) * pupilTravelDist;
+            }
+            fill(20, 20, 50, 200); // Dark blue, slightly transparent pupil
+            circle(pupilX, pupilY, pupilSize);
         }
     }
 
     // Display AI "thought process"
-    push(); // Save current drawing style
-    fill(150, 200, 255); // Light Cyan/Blue for text, matching treble color
+    push();
+    fill(150, 200, 255, 200);
     textAlign(LEFT, TOP);
-    textSize(16); // Smaller text
+    textSize(16);
 
-    text("Input (smooth): " + nf(smoothedVolume, 0, 2), 20, 20);
-    text("Dominant Freq: " + dominantEnergy, 20, 40);
-    text("Bass Energy: " + nf(bassEnergy, 0, 0), 20, 60);
-    text("Mid Energy: " + nf(midEnergy, 0, 0), 20, 80);
-    text("Treble Energy: " + nf(trebleEnergy, 0, 0), 20, 100);
-    pop(); // Restore previous drawing style
+    text("STATUS: " + observationState, 20, 20);
+    text("Input (smooth): " + nf(smoothedVolume, 0, 2), 20, 40);
+
+    if (observationState === 'ACTIVE') {
+        let dominantEnergy = 'none';
+        if (bassEnergy > 100 && bassEnergy > midEnergy && bassEnergy > trebleEnergy) dominantEnergy = 'bass';
+        else if (midEnergy > 100 && midEnergy > bassEnergy && midEnergy > trebleEnergy) dominantEnergy = 'mid';
+        else if (trebleEnergy > 100 && trebleEnergy > bassEnergy && trebleEnergy > midEnergy) dominantEnergy = 'treble';
+        text("Dominant Freq: " + dominantEnergy, 20, 60);
+    }
+    pop();
 
     drawWaveform(waveform);
 }
